@@ -13,23 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { useApi, githubAuthApiRef } from '@backstage/core';
-import { useParams } from 'react-router-dom';
-import { useAsync } from 'react-use';
-import { githubActionsApiRef } from '../../api';
 
-export const useWorkflowRunsDetails = (repo: string, owner: string) => {
-  const api = useApi(githubActionsApiRef);
-  const auth = useApi(githubAuthApiRef);
-  const { id } = useParams();
-  const details = useAsync(async () => {
-    const token = await auth.getAccessToken(['repo', 'user']);
-    return api.getWorkflowRun({
-      token,
-      owner,
-      repo,
-      id: parseInt(id, 10),
-    });
-  }, [repo, owner, id]);
-  return details;
+import { useAsync } from 'react-use';
+import { catalogApiRef, EntityCompoundName } from '@backstage/plugin-catalog';
+import { useApi } from '@backstage/core';
+
+export const useProjectName = (name: EntityCompoundName) => {
+  const catalogApi = useApi(catalogApiRef);
+
+  const { value } = useAsync<string>(async () => {
+    const entity = await catalogApi.getEntityByName(name);
+    return (
+      entity?.metadata.annotations?.['backstage.io/github-actions-id'] ?? ''
+    );
+  });
+  return value;
 };
